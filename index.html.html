@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Birthday Gazette v2.9</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Base box model and mobile tap highlight reset */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Night sky base beneath tabloid newsprint overlays */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #070b18;
+      background-image:
+        radial-gradient(circle at 22% 16%, rgba(56, 189, 248, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 78% 24%, rgba(251, 191, 36, 0.11) 0%, transparent 45%),
+        linear-gradient(180deg, #060913 0%, #0d1428 55%, #070b16 100%);
+      color: #1b1815;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    /* Starry night sky layer with twinkling stars, constellations, and shooting stars */
+    .starry-sky-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    @keyframes starTwinkle {
+      0%, 100% {
+        opacity: 0.28;
+        transform: scale(0.85);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+    }
+
+    .sky-star {
+      position: absolute;
+      border-radius: 9999px;
+      background: #fef9c3;
+      box-shadow: 0 0 6px rgba(254, 249, 195, 0.75);
+      animation: starTwinkle var(--twinkle-dur, 3.6s) ease-in-out infinite;
+      animation-delay: var(--twinkle-delay, 0s);
+    }
+
+    @keyframes shootingStarFly {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0) rotate(-28deg) scaleX(0.4);
+      }
+      12% {
+        opacity: 1;
+        transform: translate3d(-45px, 26px, 0) rotate(-28deg) scaleX(1);
+      }
+      75% {
+        opacity: 0.9;
+        transform: translate3d(-270px, 155px, 0) rotate(-28deg) scaleX(1.15);
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(-340px, 195px, 0) rotate(-28deg) scaleX(0.3);
+      }
+    }
+
+    .shooting-star {
+      position: absolute;
+      width: 96px;
+      height: 2px;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(254, 240, 138, 0.95), #ffffff);
+      box-shadow: 0 0 10px rgba(254, 240, 138, 0.8);
+      opacity: 0;
+      animation: shootingStarFly var(--shoot-dur, 7.5s) linear infinite;
+      animation-delay: var(--shoot-delay, 1s);
+    }
+
+    /* Full screen Newspaper Print & Tabloid Chaos overlay over starry night sky */
+    .tabloid-backdrop {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .tabloid-columns {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      opacity: 0.22;
+    }
+
+    .tabloid-col {
+      border-right: 1px dashed rgba(254, 243, 199, 0.28);
+      height: 100%;
+    }
+
+    .tabloid-col:last-child {
+      border-right: none;
+    }
+
+    @keyframes tabloidFloatSlow {
+      0%, 100% {
+        transform: translateY(0px) rotate(var(--tilt, -3deg));
+      }
+      50% {
+        transform: translateY(-6px) rotate(var(--tilt, -3deg));
+      }
+    }
+
+    .tabloid-scrap {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(253, 230, 138, 0.14);
+      user-select: none;
+      white-space: nowrap;
+      animation: tabloidFloatSlow var(--float-dur, 7s) ease-in-out infinite;
+    }
+
+    .tabloid-stamp-bg {
+      position: absolute;
+      border: 2px dashed rgba(248, 113, 113, 0.26);
+      color: rgba(254, 202, 202, 0.28);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transform: rotate(-11deg);
+      user-select: none;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* High contrast warm newsprint tabloid cards and panels */
+    .newsprint-card {
+      background: #fbf7ec;
+      background-image:
+        radial-gradient(rgba(27, 24, 21, 0.055) 0.6px, transparent 0.6px);
+      background-size: 16px 16px;
+      color: #1b1815;
+      border: 2px solid #1b1815;
+      box-shadow: 6px 6px 0px #1b1815;
+    }
+
+    /* Corner Easter Egg PIPIBOMB Shockwave & Badge Animations */
+    @keyframes pipiShockwave {
+      0% {
+        transform: translate(-50%, -50%) scale(0.15);
+        opacity: 0.95;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(3.4);
+        opacity: 0;
+      }
+    }
+
+    .pipi-shockwave-ring {
+      position: absolute;
+      width: 110px;
+      height: 110px;
+      border-radius: 9999px;
+      border: 4px solid #dc2626;
+      box-shadow: 0 0 24px rgba(220, 38, 38, 0.75), inset 0 0 16px rgba(245, 158, 11, 0.75);
+      pointer-events: none;
+      animation: pipiShockwave 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes pipiBadgeBlast {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 30px) scale(0.3) rotate(-12deg);
+      }
+      22% {
+        opacity: 1;
+        transform: translate(-50%, -45px) scale(1.18) rotate(4deg);
+      }
+      78% {
+        opacity: 1;
+        transform: translate(-50%, -58px) scale(1) rotate(-2deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -88px) scale(0.9) rotate(0deg);
+      }
+    }
+
+    .pipi-badge-anim {
+      animation: pipiBadgeBlast 2.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Shake feedback animations */
+    @keyframes shakeSoft {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    @keyframes shakeHard {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      15% { transform: translate(-8px, 3px) rotate(-1.5deg); }
+      30% { transform: translate(8px, -3px) rotate(1.5deg); }
+      45% { transform: translate(-6px, -2px) rotate(-1deg); }
+      60% { transform: translate(6px, 2px) rotate(1deg); }
+      75% { transform: translate(-4px, 1px) rotate(-0.5deg); }
+    }
+
+    .anim-shake-soft {
+      animation: shakeSoft 0.38s ease-in-out both;
+    }
+
+    .anim-shake-hard {
+      animation: shakeHard 0.45s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Theater curtain panels for opening and closing transitions */
+    .curtain-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      pointer-events: none;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .curtain-panel {
+      flex: 1;
+      height: 100%;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #7f1d1d 0px,
+          #991b1b 22px,
+          #450a0a 38px,
+          #7f1d1d 54px
+        );
+      box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.72);
+      transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s ease;
+    }
+
+    .curtain-panel.left {
+      border-right: 3px solid #f59e0b;
+      transform: translateX(0%);
+    }
+
+    .curtain-panel.right {
+      border-left: 3px solid #f59e0b;
+      transform: translateX(0%);
+    }
+
+    .curtain-overlay.parted .curtain-panel.left {
+      transform: translateX(-102%);
+    }
+
+    .curtain-overlay.parted .curtain-panel.right {
+      transform: translateX(102%);
+    }
+
+    .curtain-overlay.hidden-curtain {
+      display: none;
+    }
+
+    .curtain-message-banner {
+      position: fixed;
+      inset: 0;
+      z-index: 46;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      pointer-events: auto;
+      opacity: 0;
+      transition: opacity 0.45s ease 0.35s;
+    }
+
+    .curtain-message-banner.visible {
+      opacity: 1;
+    }
+
+    .curtain-message-banner.hidden-banner {
+      display: none;
+    }
+
+    #runner-canvas {
+      display: block;
+      width: 100%;
+      height: 215px;
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body id="page-body" class="flex flex-col justify-between p-4 sm:p-6 relative select-none">
+
+  <!-- Starry Night Backdrop with Twinkling Stars, Constellations & Shooting Stars -->
+  <div id="starry-sky-layer" class="starry-sky-layer" aria-hidden="true">
+    <svg viewBox="0 0 1200 700" preserveAspectRatio="none" class="w-full h-full opacity-30">
+      <polyline points="120,120 215,85 310,135 395,95" fill="none" stroke="#fef08a" stroke-width="1.2" stroke-dasharray="4 5" />
+      <circle cx="120" cy="120" r="3" fill="#fef08a" />
+      <circle cx="215" cy="85" r="3.5" fill="#ffffff" />
+      <circle cx="310" cy="135" r="2.8" fill="#fef08a" />
+      <circle cx="395" cy="95" r="3.2" fill="#fde047" />
+
+      <polyline points="820,110 915,155 1015,105 1095,165" fill="none" stroke="#93c5fd" stroke-width="1.2" stroke-dasharray="4 5" />
+      <circle cx="820" cy="110" r="3" fill="#e0f2fe" />
+      <circle cx="915" cy="155" r="2.8" fill="#fef08a" />
+      <circle cx="1015" cy="105" r="3.5" fill="#ffffff" />
+      <circle cx="1095" cy="165" r="2.8" fill="#fde047" />
+    </svg>
+
+    <div class="shooting-star" style="top: 11%; left: 72%; --shoot-dur: 7.5s; --shoot-delay: 0.8s;"></div>
+    <div class="shooting-star" style="top: 26%; left: 88%; --shoot-dur: 9.2s; --shoot-delay: 4.1s;"></div>
+    <div class="shooting-star" style="top: 17%; left: 48%; --shoot-dur: 8.4s; --shoot-delay: 6.4s;"></div>
+  </div>
+
+  <!-- Full screen Newspaper Print & Tabloid Chaos overlay -->
+  <div id="tabloid-backdrop" class="tabloid-backdrop" aria-hidden="true">
+    <div class="tabloid-columns">
+      <div class="tabloid-col"></div>
+      <div class="tabloid-col"></div>
+      <div class="tabloid-col"></div>
+    </div>
+
+    <div class="tabloid-scrap text-2xl sm:text-4xl" style="top: 9%; left: 5%; --tilt: -4deg; --float-dur: 7.5s;">
+      EXTRA! EXTRA! CHAOS REPORT
+    </div>
+    <div class="tabloid-scrap text-lg sm:text-2xl" style="top: 22%; right: 6%; --tilt: 3deg; --float-dur: 8.8s;">
+      PIPEBOMB ALERT
+    </div>
+    <div class="tabloid-scrap text-xl sm:text-3xl" style="bottom: 24%; left: 7%; --tilt: -2deg; --float-dur: 6.9s;">
+      GRAY RAT SURVIVAL BULLETIN
+    </div>
+    <div class="tabloid-scrap text-base sm:text-xl" style="bottom: 13%; right: 16%; --tilt: 4deg; --float-dur: 8.2s;">
+      NO SHARED CAKE EDITION
+    </div>
+
+    <div class="tabloid-stamp-bg text-xs sm:text-sm" style="top: 14%; right: 18%;">
+      CLASSIFIED
+    </div>
+    <div class="tabloid-stamp-bg text-xs sm:text-sm" style="bottom: 33%; left: 14%; transform: rotate(8deg);">
+      HOT OFF THE PRESS
+    </div>
+  </div>
+
+  <!-- Full screen confetti canvas -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <!-- Corner Easter Egg Explosion & Shockwave Layer -->
+  <div id="pipibomb-fx-layer" class="fixed inset-0 pointer-events-none z-40 overflow-hidden" aria-hidden="true"></div>
+
+  <!-- Stage Curtains Overlay for Opening & Closing Transitions -->
+  <div id="stage-curtain-overlay" class="curtain-overlay hidden-curtain" aria-hidden="true">
+    <div class="curtain-panel left"></div>
+    <div class="curtain-panel right"></div>
+  </div>
+
+  <!-- Closing Curtain Sign-Off Banner -->
+  <div id="closing-curtain-banner" class="curtain-message-banner hidden-banner" role="dialog" aria-modal="true">
+    <div class="newsprint-card rounded-2xl p-6 sm:p-8 max-w-md w-full text-center space-y-4">
+      <div class="flex items-center justify-between gap-2 border-b-2 border-stone-900 pb-2.5">
+        <span class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+          CURTAINS CLOSED // FINAL SIGN OFF
+        </span>
+        <span class="px-2.5 py-0.5 rounded-full bg-amber-300 border border-stone-950 font-mono-tech text-[10px] font-extrabold text-stone-950">
+          TRIVIA COMPLETE
+        </span>
+      </div>
+
+      <div class="space-y-1.5 pt-1">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-stone-950 tracking-tight">
+          Happy Birthday! 🎉
+        </h2>
+        <p class="text-sm sm:text-base font-extrabold text-red-700">
+          that’s it, baii · don’t be a stranger :)
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-[#f2e8d0] border-2 border-stone-950 text-left space-y-1">
+        <div class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+          HAPPY BIRTHDAY WISH
+        </div>
+        <p class="text-xs sm:text-sm font-extrabold text-stone-950 leading-relaxed">
+          Happy birthday, join the Bingo next month so I can beat you ^^
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-[#f2e8d0] border-2 border-stone-950 text-left space-y-1">
+        <div class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+          FORTUNE SLIP
+        </div>
+        <p class="text-xs sm:text-sm font-extrabold text-stone-950 leading-relaxed">
+          You get ten seconds of genuine appreciation and zero shared cake.
+        </p>
+      </div>
+
+      <button id="curtain-replay-btn" type="button"
+        class="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border-2 border-stone-950 font-extrabold text-xs sm:text-sm shadow-[3px_3px_0px_#1b1815] transition cursor-pointer">
+        Replay Surprise 🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- TOP BAR -->
+  <header class="w-full max-w-2xl mx-auto flex flex-wrap items-center justify-between gap-2 z-20">
+    <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full newsprint-card">
+      <span id="status-led" class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
+      <span class="font-mono-tech text-[11px] font-extrabold text-stone-900 tracking-wider">HAPPY BIRTHDAY GAZETTE</span>
+    </div>
+
+    <button id="audio-toggle-btn" type="button"
+      class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full newsprint-card hover:bg-amber-100 font-mono-tech text-[11px] font-extrabold text-stone-950 tracking-wider transition transform active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+      aria-label="Toggle soundtrack audio">
+      <span id="audio-toggle-icon">🔇</span>
+      <span id="audio-toggle-label">SOUND: OFF</span>
+    </button>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- 1. OPENING CURTAIN ENTRY LAYER                            -->
+  <!-- ========================================================= -->
+  <section id="layer-curtain" class="w-full max-w-md mx-auto my-auto z-20 py-6">
+    <div class="newsprint-card rounded-2xl p-6 sm:p-8 text-center space-y-5 fade-up">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-stone-950 font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-800">
+        <span>🎭 CURTAIN CALL</span>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-950 tracking-tight">
+        Ready for it..?
+      </h1>
+
+      <p class="text-xs sm:text-sm text-stone-700 font-medium leading-relaxed">
+        The curtains are drawn and the soundtrack is waiting behind them.
+      </p>
+
+      <button id="play-anyways-btn" type="button"
+        class="w-full py-3 px-5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 border-2 border-stone-950 font-extrabold text-sm shadow-[4px_4px_0px_#1b1815] transition transform active:translate-x-[1px] active:translate-y-[1px] cursor-pointer">
+        play anyways 🎭
+      </button>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 2. SCANNING PAGE & BACK PAIN CHAPTER                      -->
+  <!-- ========================================================= -->
+  <section id="layer-next-chapter" class="hidden w-full max-w-md mx-auto my-auto z-20 py-6">
+    <div class="newsprint-card rounded-2xl p-6 sm:p-7 text-center space-y-5 fade-up">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200 border border-stone-950 font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-stone-950">
+        <span>📡 SCANNER // STEP 1</span>
+      </div>
+
+      <div id="chapter-scanning-box" class="py-3 space-y-3">
+        <div id="chapter-scan-status" class="font-mono-tech text-sm sm:text-base font-extrabold text-red-700 animate-pulse">
+          scanning the birthday item...
+        </div>
+        <div id="chapter-scan-result" class="hidden text-xs sm:text-sm font-extrabold text-stone-950 bg-amber-100 border border-stone-950 rounded-xl p-3">
+          99 percent sagitterrorist, no chilling, only chaos
+        </div>
+        <div class="w-full h-2.5 rounded-full bg-stone-200 border border-stone-950 overflow-hidden">
+          <div id="chapter-scan-bar" class="h-full w-1/3 bg-amber-400 transition-all duration-700"></div>
+        </div>
+      </div>
+
+      <div id="chapter-prompt-box" class="hidden space-y-4 text-left">
+        <h2 class="text-lg sm:text-xl font-extrabold text-stone-950 leading-snug">
+          have you started to get back pain yet? 😈
+        </h2>
+
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-quick-reply="only when I sneeze"
+            class="chapter-chip px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-stone-950 text-xs font-bold text-stone-950 transition cursor-pointer">
+            only when I sneeze
+          </button>
+          <button type="button" data-quick-reply="suspiciously often lately"
+            class="chapter-chip px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-stone-950 text-xs font-bold text-stone-950 transition cursor-pointer">
+            suspiciously often lately
+          </button>
+          <button type="button" data-quick-reply="my spine is built different"
+            class="chapter-chip px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-stone-950 text-xs font-bold text-stone-950 transition cursor-pointer">
+            my spine is built different
+          </button>
+        </div>
+
+        <form id="chapter-reply-form" class="space-y-3">
+          <input id="chapter-reply-input" type="text" required placeholder="Type your honest answer..."
+            class="w-full px-3.5 py-2.5 rounded-xl bg-[#fffdf7] border-2 border-stone-950 text-sm font-semibold text-stone-950 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <button type="submit"
+            class="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border-2 border-stone-950 font-extrabold text-xs sm:text-sm shadow-[3px_3px_0px_#1b1815] transition cursor-pointer">
+            Send Reply ➡️
+          </button>
+        </form>
+      </div>
+
+      <div id="chapter-after-reply-box" class="hidden space-y-4">
+        <div class="p-3.5 rounded-xl bg-amber-100 border-2 border-stone-950 text-left space-y-1">
+          <div class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-stone-600">
+            YOUR REPLY
+          </div>
+          <div id="chapter-recorded-reply" class="text-xs sm:text-sm font-bold text-stone-950"></div>
+        </div>
+
+        <div class="text-lg sm:text-xl font-extrabold text-red-700">
+          interesting… 😏😏
+        </div>
+
+        <button id="chapter-enter-main-btn" type="button"
+          class="w-full py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 border-2 border-stone-950 font-extrabold text-sm shadow-[3px_3px_0px_#1b1815] transition cursor-pointer">
+          Start the Rat Game 🐭
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 3. STAGE 2: GRAY LITTLE RAT RUNNER GATE                  -->
+  <!-- ========================================================= -->
+  <section id="stage-games" class="hidden w-full max-w-xl mx-auto my-auto z-20 py-4">
+    <div id="games-card" class="newsprint-card rounded-2xl p-5 sm:p-6">
+
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b-2 border-stone-900">
+        <div>
+          <div class="font-mono-tech text-[11px] font-extrabold uppercase tracking-wider text-red-700">
+            STAGE 2 // GRAY RAT RUNNER
+          </div>
+          <h2 class="text-lg sm:text-xl font-extrabold text-stone-950">
+            Survive to 500 XP 🐭
+          </h2>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 font-mono-tech text-[11px] font-bold">
+          <span id="badge-game-1" class="px-2.5 py-1 rounded-lg bg-amber-200 border border-stone-900 text-stone-950">
+            Gray Rat: Active
+          </span>
+        </div>
+      </div>
+
+      <div id="minigame-1-panel">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <div class="text-sm font-extrabold text-stone-950">
+            Gray Little Rat Runner 🐭🐈🦈🧀🦜
+          </div>
+          <div class="flex items-center gap-2 font-mono-tech text-xs font-extrabold">
+            <span class="px-2.5 py-1 rounded-lg bg-amber-100 border border-stone-900 text-stone-950">
+              <span class="text-stone-600">LIVES:</span>
+              <span id="runner-chances" class="text-emerald-800">2</span>
+              <span class="text-stone-500">/</span>
+              <span class="text-stone-700">2</span>
+            </span>
+            <span class="px-3 py-1 rounded-lg bg-amber-100 border border-stone-900 text-stone-950">
+              <span class="text-stone-600">XP:</span>
+              <span id="runner-score" class="text-red-700">0</span>
+              <span class="text-stone-500">/</span>
+              <span class="text-stone-900">500</span>
+            </span>
+          </div>
+        </div>
+
+        <p id="runner-status-msg" class="text-xs sm:text-sm text-stone-800 font-medium mb-3">
+          Survive prowling cats and flying sharks to slowly earn 500 XP! Cheese gives a backup life and green parrots (🦜) award +25 extra XP.
+        </p>
+
+        <div class="relative rounded-xl overflow-hidden border-2 border-stone-950 bg-stone-950 shadow-inner">
+          <canvas id="runner-canvas"></canvas>
+          <div id="runner-death-overlay" class="hidden absolute inset-0 bg-stone-950/85 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center space-y-3 z-10">
+            <div class="px-3.5 py-1.5 rounded-xl bg-red-600 text-white border-2 border-amber-300 font-mono-tech text-xs sm:text-sm font-extrabold tracking-wider shadow-[3px_3px_0px_#000]">
+              Too bad, try again ^^
+            </div>
+            <div id="runner-death-countdown" class="font-mono-tech text-xs font-bold text-amber-200">
+              Pausing for 3s...
+            </div>
+            <button id="runner-resume-btn" type="button" disabled
+              class="hidden px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 border-2 border-stone-950 font-extrabold text-xs sm:text-sm shadow-[3px_3px_0px_#000] transition cursor-pointer">
+              Resume Run ▶️
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <button id="runner-jump-btn" type="button"
+            class="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 border-2 border-stone-950 font-extrabold text-sm shadow-[3px_3px_0px_#1b1815] transition transform active:translate-x-[1px] active:translate-y-[1px] cursor-pointer">
+            JUMP ⬆️
+          </button>
+
+          <button id="runner-duck-btn" type="button"
+            class="flex-1 py-3 px-4 rounded-xl bg-sky-300 hover:bg-sky-200 text-stone-950 border-2 border-stone-950 font-extrabold text-sm shadow-[3px_3px_0px_#1b1815] transition transform active:translate-x-[1px] active:translate-y-[1px] cursor-pointer">
+            DUCK DOWN ⬇️
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- 4 & 5. SURPRISE REVEAL & 1997 ERA EMO TRIVIA              -->
+  <!-- ========================================================= -->
+  <main id="stage-cake" class="hidden w-full max-w-lg mx-auto my-auto flex-col items-center text-center py-4 z-10">
+
+    <div class="mb-4 fade-up newsprint-card px-5 py-3.5 rounded-2xl">
+      <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-stone-950">
+        Cake &amp; Chaos 🎂
+      </h2>
+      <p id="cake-subtitle" class="text-stone-700 font-medium text-xs sm:text-sm mt-1">
+        The rat survived to 500 XP—make a wish, blow out all 5 candles, and slice the cake.
+      </p>
+      <div class="mt-3 pt-3 border-t border-stone-900/20 text-xs sm:text-sm font-bold text-stone-900 leading-relaxed">
+        Wishing you less back pain, peak sagitterrorist energy, and a genuinely great year ahead.
+      </div>
+    </div>
+
+    <!-- Interactive Cake Stage (Wish + 5 Candles + Zigzag Cut -> Pipebomb Reveal) -->
+    <div id="cake-interactive-card" class="w-full max-w-md newsprint-card rounded-2xl p-4 sm:p-5 mb-3.5 text-center fade-up">
+      <div class="mb-3 text-left">
+        <label for="wish-input" class="block font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-stone-700 mb-1">
+          MAKE A WISH FIRST
+        </label>
+        <div class="flex gap-2">
+          <input id="wish-input" type="text" placeholder="Type your wish..."
+            class="flex-1 px-3 py-2 rounded-xl bg-[#fffdf7] border-2 border-stone-950 text-xs sm:text-sm font-semibold text-stone-950 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <button id="wish-save-btn" type="button"
+            class="px-3.5 py-2 rounded-xl bg-amber-300 hover:bg-amber-200 border-2 border-stone-950 font-mono-tech text-xs font-extrabold text-stone-950 shadow-[2px_2px_0px_#1b1815] transition cursor-pointer">
+            Save Wish
+          </button>
+        </div>
+        <div id="wish-noted-toast" class="hidden mt-2 px-3 py-1.5 rounded-xl bg-emerald-100 border border-emerald-900 font-mono-tech text-xs font-extrabold text-emerald-950">
+          alright, wish noted.
+        </div>
+      </div>
+
+      <div id="cake-visual-box" class="relative rounded-xl bg-stone-950 border-2 border-stone-950 p-3 overflow-hidden">
+        <svg id="birthday-cake-svg" viewBox="0 0 360 220" class="w-full h-auto select-none">
+          <ellipse cx="180" cy="196" rx="135" ry="14" fill="#475569" />
+
+          <!-- Left Half of Cake (splits open on zigzag cut) -->
+          <g id="cake-left-half" style="transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);">
+            <path d="M 85 135 L 85 184 C 85 190, 132 193, 180 194 L 164 182 L 194 164 L 164 144 L 180 126 C 128 126, 85 130, 85 135 Z" fill="#451a03" />
+            <path d="M 85 135 C 85 127, 132 126, 180 126 L 164 144 L 178 153 C 166 151, 158 154, 152 158 C 138 170, 124 146, 110 158 C 98 168, 90 156, 85 148 Z" fill="#fef3c7" />
+            <path d="M 180 144 A 95 12 0 0 1 180 123 L 164 144 Z" fill="#fde68a" />
+            <circle cx="135" cy="133" r="2.5" fill="#ef4444" />
+            <circle cx="162" cy="136" r="2.5" fill="#38bdf8" />
+          </g>
+
+          <!-- Right Half of Cake (splits open on zigzag cut) -->
+          <g id="cake-right-half" style="transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);">
+            <path d="M 180 126 L 164 144 L 194 164 L 164 182 L 180 194 C 228 193, 275 190, 275 184 L 275 135 C 275 130, 232 126, 180 126 Z" fill="#451a03" />
+            <path d="M 180 126 C 228 126, 275 127, 275 135 L 275 152 C 264 162, 250 144, 238 158 C 224 172, 210 146, 196 158 C 191 162, 187 162, 183 158 L 194 164 L 164 144 Z" fill="#fef3c7" />
+            <path d="M 180 123 A 95 12 0 0 1 180 144 L 164 144 Z" fill="#fde68a" />
+            <circle cx="195" cy="132" r="2.5" fill="#f59e0b" />
+            <circle cx="225" cy="137" r="2.5" fill="#22c55e" />
+          </g>
+
+          <!-- Pipebomb inside the split cake cavity -->
+          <g id="cake-inner-bomb" style="opacity: 0; transform: scale(0.5); transform-origin: 180px 162px; transition: opacity 0.4s ease 0.15s, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;">
+            <circle cx="180" cy="166" r="19" fill="#18181b" stroke="#f59e0b" stroke-width="2" />
+            <circle cx="174" cy="160" r="4" fill="#52525b" />
+            <rect x="175" y="143" width="10" height="6" rx="1.5" fill="#3f3f46" />
+            <path d="M 180 143 Q 186 133, 194 135" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="195" cy="135" r="3.5" fill="#ef4444" />
+            <circle cx="195" cy="135" r="1.8" fill="#fef08a" />
+          </g>
+
+          <!-- 5 Candles -->
+          <g class="cake-candle-group" data-cidx="0" transform="translate(116, 90)" style="cursor:pointer;">
+            <rect x="-10" y="-28" width="20" height="58" fill="transparent" />
+            <rect x="-4" y="0" width="8" height="36" rx="2" fill="#38bdf8" />
+            <path class="c-flame" d="M 0 -22 C 6 -13, 5 -4, 0 -2 C -5 -4, -6 -13, 0 -22 Z" fill="#facc15" />
+          </g>
+          <g class="cake-candle-group" data-cidx="1" transform="translate(148, 84)" style="cursor:pointer;">
+            <rect x="-10" y="-28" width="20" height="58" fill="transparent" />
+            <rect x="-4" y="0" width="8" height="40" rx="2" fill="#f43f5e" />
+            <path class="c-flame" d="M 0 -22 C 6 -13, 5 -4, 0 -2 C -5 -4, -6 -13, 0 -22 Z" fill="#facc15" />
+          </g>
+          <g class="cake-candle-group" data-cidx="2" transform="translate(180, 80)" style="cursor:pointer;">
+            <rect x="-10" y="-28" width="20" height="58" fill="transparent" />
+            <rect x="-4.5" y="0" width="9" height="44" rx="2" fill="#fbbf24" />
+            <path class="c-flame" d="M 0 -24 C 7 -14, 6 -4, 0 -2 C -6 -4, -7 -14, 0 -24 Z" fill="#fde047" />
+          </g>
+          <g class="cake-candle-group" data-cidx="3" transform="translate(212, 84)" style="cursor:pointer;">
+            <rect x="-10" y="-28" width="20" height="58" fill="transparent" />
+            <rect x="-4" y="0" width="8" height="40" rx="2" fill="#a855f7" />
+            <path class="c-flame" d="M 0 -22 C 6 -13, 5 -4, 0 -2 C -5 -4, -6 -13, 0 -22 Z" fill="#facc15" />
+          </g>
+          <g class="cake-candle-group" data-cidx="4" transform="translate(244, 90)" style="cursor:pointer;">
+            <rect x="-10" y="-28" width="20" height="58" fill="transparent" />
+            <rect x="-4" y="0" width="8" height="36" rx="2" fill="#22c55e" />
+            <path class="c-flame" d="M 0 -22 C 6 -13, 5 -4, 0 -2 C -5 -4, -6 -13, 0 -22 Z" fill="#facc15" />
+          </g>
+
+          <!-- Zigzag Cake Cut Line (appears when slicing) -->
+          <polyline id="cake-zigzag-line" points="180,126 164,144 194,164 164,182 180,194"
+            fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+            style="opacity:0; transition: opacity 0.3s ease;" />
+        </svg>
+
+        <!-- Pipebomb Revealed After Cutting Cake Open -->
+        <div id="pipebomb-inside-reveal" class="hidden mt-3 p-3.5 rounded-xl bg-amber-100 border-2 border-amber-400 text-stone-950 space-y-1.5">
+          <div class="font-mono-tech text-xs font-extrabold uppercase tracking-wider text-red-700">
+            ZIGZAG SLICE COMPLETE
+          </div>
+          <div class="flex items-center justify-center gap-2 py-1">
+            <span class="text-4xl leading-none">💣</span>
+            <span class="font-mono-tech text-xl sm:text-2xl font-extrabold uppercase tracking-wider text-stone-950">
+              pipebomb
+            </span>
+          </div>
+          <p class="text-xs font-bold text-stone-900">
+            The cake split right open and there was a pipebomb inside instead of cake filling.
+          </p>
+        </div>
+      </div>
+
+      <div id="cake-status-text" class="mt-2.5 font-mono-tech text-xs font-extrabold text-stone-800">
+        Lit candles: <span id="lit-candles-count">5</span> / 5 (Tap any candle to blow it out)
+      </div>
+
+      <div class="mt-3 flex flex-col sm:flex-row gap-2">
+        <button id="blow-candles-btn" type="button"
+          class="flex-1 py-2.5 px-3.5 rounded-xl bg-amber-300 hover:bg-amber-200 text-stone-950 border-2 border-stone-950 font-extrabold text-xs shadow-[2px_2px_0px_#1b1815] transition cursor-pointer">
+          Blow Out All Candles 💨
+        </button>
+        <button id="cut-cake-btn" type="button" disabled
+          class="flex-1 py-2.5 px-3.5 rounded-xl bg-stone-300 text-stone-600 border-2 border-stone-950 font-extrabold text-xs transition cursor-not-allowed">
+          Zigzag Cut Cake 🔪
+        </button>
+      </div>
+    </div>
+
+    <div id="post-candles-section" class="hidden w-full max-w-md mt-2 space-y-3.5 px-1">
+      <div id="emo-trivia-card" class="newsprint-card rounded-2xl p-4 sm:p-5 text-left space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-stone-900 pb-2">
+          <div>
+            <div class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+              BONUS // 1997 ERA EMO TRIVIA
+            </div>
+            <div id="trivia-question-counter" class="font-mono-tech text-xs font-extrabold text-stone-950">
+              QUESTION 1 OF 3
+            </div>
+          </div>
+          <span id="trivia-score-badge" class="px-2.5 py-1 rounded-full bg-amber-300 border border-stone-950 font-mono-tech text-[11px] font-extrabold text-stone-950">
+            SCORE: 0 / 3
+          </span>
+        </div>
+
+        <p id="trivia-prompt-text" class="text-xs sm:text-sm font-extrabold text-stone-950 leading-snug"></p>
+
+        <div id="trivia-options-list" class="space-y-2"></div>
+
+        <div id="trivia-verdict-box" class="hidden mt-3 p-3 rounded-xl bg-[#fbf7ec] border-2 border-stone-950 space-y-1">
+          <div id="trivia-verdict-heading" class="font-mono-tech text-xs font-extrabold tracking-wider"></div>
+          <p id="trivia-verdict-note" class="text-xs font-bold text-stone-800 leading-relaxed"></p>
+        </div>
+
+        <!-- Post-Trivia Back Pain Check-Up Bridge -->
+        <div id="post-trivia-backpain-box" class="hidden mt-3 p-3.5 rounded-xl bg-amber-100 border-2 border-stone-950 space-y-3">
+          <div class="font-mono-tech text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+            POST-TRIVIA BACK PAIN CHECK-UP
+          </div>
+          <p class="text-xs sm:text-sm font-extrabold text-stone-950 leading-snug">
+            Still standing after all that drama? Spine intact or did the trivia hit a nerve? 🦴
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" data-checkup-choice="spine still intact, barely"
+              class="backpain-checkup-btn px-2.5 py-1.5 rounded-xl bg-[#fbf7ec] hover:bg-amber-200 border border-stone-950 text-[11px] font-extrabold text-stone-950 transition cursor-pointer">
+              spine still intact, barely
+            </button>
+            <button type="button" data-checkup-choice="lower back filed a complaint"
+              class="backpain-checkup-btn px-2.5 py-1.5 rounded-xl bg-[#fbf7ec] hover:bg-amber-200 border border-stone-950 text-[11px] font-extrabold text-stone-950 transition cursor-pointer">
+              lower back filed a complaint
+            </button>
+            <button type="button" data-checkup-choice="stretching dramatically right now"
+              class="backpain-checkup-btn px-2.5 py-1.5 rounded-xl bg-[#fbf7ec] hover:bg-amber-200 border border-stone-950 text-[11px] font-extrabold text-stone-950 transition cursor-pointer">
+              stretching dramatically right now
+            </button>
+          </div>
+          <div id="backpain-checkup-note" class="hidden text-xs font-extrabold text-red-700"></div>
+          <button id="close-curtains-after-checkup-btn" type="button"
+            class="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white border-2 border-stone-950 font-extrabold text-xs shadow-[2px_2px_0px_#1b1815] transition cursor-pointer">
+            Close the Curtains 🎭
+          </button>
+        </div>
+
+        <div class="pt-1 flex items-center justify-between gap-2">
+          <button id="trivia-next-btn" type="button"
+            class="px-3.5 py-2 rounded-xl bg-amber-300 hover:bg-amber-200 border-2 border-stone-950 font-mono-tech text-xs font-extrabold text-stone-950 shadow-[2px_2px_0px_#1b1815] transition cursor-pointer">
+            Next Question ➡️
+          </button>
+          <button id="replay-btn" type="button"
+            class="px-3.5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-amber-300 border-2 border-stone-950 font-mono-tech text-xs font-extrabold shadow-[2px_2px_0px_#1b1815] transition cursor-pointer">
+            Reset Run 🔄
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 7. CORNER EASTER EGG ("😗" TO "🗞️" + PIPIBOMB) -->
+  <div class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
+    <button id="puppy-pill-btn" type="button"
+      class="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#fbf7ec] hover:bg-amber-100 border-2 border-stone-950 text-stone-950 shadow-[4px_4px_0px_#1b1815] transition transform active:translate-x-[1px] active:translate-y-[1px] cursor-pointer">
+      <span id="puppy-pill-emoji" class="text-xl leading-none">😗</span>
+      <span id="puppy-pill-text" class="text-xs font-extrabold text-red-700 tracking-wide">Do not click here</span>
+    </button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ============================================================
+      // 0. SCENE-ADAPTIVE SOUNDTRACK, CURTAIN APPLAUSE & SFX
+      // ============================================================
+      const audioToggleBtn = document.getElementById('audio-toggle-btn');
+      const audioToggleIcon = document.getElementById('audio-toggle-icon');
+      const audioToggleLabel = document.getElementById('audio-toggle-label');
+
+      let audioUnlocked = false;
+      let isMuted = false;
+      let currentSceneMood = 'curtain';
+      let musicStep = 0;
+      let musicLoopTimer = null;
+
+      let leadSynth = null;
+      let harmonySynth = null;
+      let bassSynth = null;
+      let noiseSynth = null;
+
+      // Distinct scene tunes & tempos: fast during mini-games, slower outside games
+      const sceneSoundtracks = {
+        curtain: {
+          intervalMs: 420,
+          leadNotes: ['B3', 'E4', 'G4', 'F#4', 'E4', 'B3', 'C4', 'B3', 'A3', 'E4', 'G4', 'F#4', 'E4', 'D#4', 'E4', null],
+          harmonyNotes: ['E3', null, 'B3', null, 'G3', null, 'F#3', null, 'C3', null, 'G3', null, 'B2', null, 'E3', null],
+          bassNotes: ['E2', null, null, null, 'E2', null, null, null, 'C2', null, null, null, 'B1', null, 'E2', null]
+        },
+        games: {
+          intervalMs: 215,
+          leadNotes: [
+            'E4', 'B4', 'G4', 'B4', 'F#4', 'B4', 'G4', 'B4',
+            'C4', 'G4', 'E4', 'G4', 'D4', 'G4', 'E4', 'G4',
+            'G4', 'D5', 'B4', 'D5', 'A4', 'D5', 'B4', 'D5',
+            'D4', 'A4', 'F#4', 'A4', 'E4', 'A4', 'F#4', 'G4'
+          ],
+          harmonyNotes: [
+            'G3', null, 'B3', null, 'E4', null, 'B3', null,
+            'E3', null, 'G3', null, 'C4', null, 'G3', null,
+            'B3', null, 'D4', null, 'G4', null, 'D4', null,
+            'F#3', null, 'A3', null, 'D4', null, 'A3', null
+          ],
+          bassNotes: [
+            'E2', 'E2', 'E2', 'E2', 'E2', 'E2', 'E2', 'G2',
+            'C2', 'C2', 'C2', 'C2', 'C2', 'C2', 'C2', 'B1',
+            'G1', 'G1', 'G1', 'G1', 'G1', 'G1', 'G1', 'B1',
+            'D2', 'D2', 'D2', 'D2', 'D2', 'D2', 'D2', 'D#2'
+          ]
+        },
+        emo: {
+          intervalMs: 325,
+          leadNotes: [
+            'E4', 'B4', 'G4', 'B4', 'F#4', 'B4', 'G4', 'B4',
+            'C4', 'G4', 'E4', 'G4', 'D4', 'G4', 'E4', 'G4',
+            'G4', 'D5', 'B4', 'D5', 'A4', 'D5', 'B4', 'D5',
+            'D4', 'A4', 'F#4', 'A4', 'E4', 'A4', 'F#4', 'G4'
+          ],
+          harmonyNotes: [
+            'G3', null, 'B3', null, 'E4', null, 'B3', null,
+            'E3', null, 'G3', null, 'C4', null, 'G3', null,
+            'B3', null, 'D4', null, 'G4', null, 'D4', null,
+            'F#3', null, 'A3', null, 'D4', null, 'A3', null
+          ],
+          bassNotes: [
+            'E2', null, 'E2', null, 'E2', null, 'E2', 'G2',
+            'C2', null, 'C2', null, 'C2', null, 'C2', 'B1',
+            'G1', null, 'G1', null, 'G1', null, 'G1', 'B1',
+            'D2', null, 'D2', null, 'D2', null, 'D2', 'D#2'
+          ]
+        },
+        finale: {
+          intervalMs: 460,
+          leadNotes: ['G4', 'F#4', 'E4', 'D4', 'C4', 'B3', 'A3', 'B3', 'E4', null, 'G4', null, 'E4', null, null, null],
+          harmonyNotes: ['B3', null, 'G3', null, 'E3', null, 'F#3', null, 'G3', null, 'B3', null, 'G3', null, null, null],
+          bassNotes: ['E2', null, 'D2', null, 'C2', null, 'B1', null, 'E2', null, 'B1', null, 'E2', null, null, null]
+        }
+      };
+
+      function updateAudioToggleUi() {
+        if (!audioToggleIcon || !audioToggleLabel) return;
+        if (!audioUnlocked || isMuted) {
+          audioToggleIcon.textContent = '🔇';
+          audioToggleLabel.textContent = 'SOUND: OFF';
+        } else {
+          audioToggleIcon.textContent = '🔊';
+          audioToggleLabel.textContent = 'SOUND: ON';
+        }
+      }
+
+      function initAudioSynths() {
+        if (leadSynth || typeof Tone === 'undefined') return;
+        leadSynth = new Tone.Synth({
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.008, decay: 0.22, sustain: 0.14, release: 0.26 }
+        }).toDestination();
+        leadSynth.volume.value = -14;
+
+        harmonySynth = new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.015, decay: 0.28, sustain: 0.12, release: 0.3 }
+        }).toDestination();
+        harmonySynth.volume.value = -18;
+
+        bassSynth = new Tone.Synth({
+          oscillator: { type: 'sawtooth' },
+          envelope: { attack: 0.01, decay: 0.18, sustain: 0.22, release: 0.2 }
+        }).toDestination();
+        bassSynth.volume.value = -21;
+
+        noiseSynth = new Tone.NoiseSynth({
+          noise: { type: 'pink' },
+          envelope: { attack: 0.01, decay: 0.22, sustain: 0, release: 0.1 }
+        }).toDestination();
+        noiseSynth.volume.value = -15;
+      }
+
+      function playCurtainApplause() {
+        if (!audioUnlocked || isMuted || !noiseSynth || typeof Tone === 'undefined') return;
+        const clapOffsets = [0, 0.09, 0.17, 0.26, 0.34, 0.43, 0.52, 0.61, 0.71, 0.82];
+        clapOffsets.forEach((offset, idx) => {
+          const t = Tone.now() + offset;
+          noiseSynth.triggerAttackRelease(idx % 3 === 0 ? '16n' : '32n', t);
+        });
+      }
+
+      function startMusicScheduler() {
+        if (musicLoopTimer) {
+          clearInterval(musicLoopTimer);
+          musicLoopTimer = null;
+        }
+        const track = sceneSoundtracks[currentSceneMood] || sceneSoundtracks.curtain;
+        musicLoopTimer = setInterval(() => {
+          if (!audioUnlocked || isMuted || !leadSynth || !bassSynth || typeof Tone === 'undefined') return;
+          const activeTrack = sceneSoundtracks[currentSceneMood] || sceneSoundtracks.curtain;
+          const idx = musicStep % activeTrack.leadNotes.length;
+          const lNote = activeTrack.leadNotes[idx];
+          const hNote = activeTrack.harmonyNotes[idx];
+          const bNote = activeTrack.bassNotes[idx];
+          const now = Tone.now();
+          if (lNote) {
+            leadSynth.triggerAttackRelease(lNote, '8n', now);
+          }
+          if (hNote && harmonySynth) {
+            harmonySynth.triggerAttackRelease(hNote, '8n', now);
+          }
+          if (bNote) {
+            bassSynth.triggerAttackRelease(bNote, '8n', now);
+          }
+          musicStep += 1;
+        }, track.intervalMs);
+      }
+
+      function setSceneMood(mood) {
+        const nextMood = sceneSoundtracks[mood] ? mood : 'curtain';
+        if (currentSceneMood === nextMood) return;
+        currentSceneMood = nextMood;
+        musicStep = 0;
+        if (audioUnlocked && !isMuted) {
+          startMusicScheduler();
+        }
+      }
+
+      async function unlockAndStartAudio() {
+        if (typeof Tone === 'undefined') return;
+        try {
+          if (Tone.context && Tone.context.state !== 'running') {
+            await Tone.start();
+          }
+          initAudioSynths();
+          audioUnlocked = true;
+          isMuted = false;
+          updateAudioToggleUi();
+          startMusicScheduler();
+        } catch (err) {
+          // Audio remains gracefully disabled if blocked by environment
+        }
+      }
+
+      function playSfx(type) {
+        if (!audioUnlocked || isMuted || !leadSynth || typeof Tone === 'undefined') return;
+        try {
+          const now = Tone.now();
+          if (type === 'curtain') {
+            playCurtainApplause();
+            leadSynth.triggerAttackRelease('E4', '16n', now);
+            leadSynth.triggerAttackRelease('B4', '16n', now + 0.08);
+          } else if (type === 'jump') {
+            leadSynth.triggerAttackRelease('G4', '32n', now);
+            leadSynth.triggerAttackRelease('D5', '32n', now + 0.045);
+          } else if (type === 'duck') {
+            leadSynth.triggerAttackRelease('C4', '32n', now);
+            leadSynth.triggerAttackRelease('G3', '32n', now + 0.045);
+          } else if (type === 'cheese') {
+            leadSynth.triggerAttackRelease('B5', '32n', now);
+            leadSynth.triggerAttackRelease('E6', '16n', now + 0.05);
+          } else if (type === 'bonk') {
+            if (bassSynth) bassSynth.triggerAttackRelease('A1', '8n', now);
+          } else if (type === 'pipebomb') {
+            if (noiseSynth) noiseSynth.triggerAttackRelease('4n', now);
+            if (bassSynth) bassSynth.triggerAttackRelease('E1', '4n', now);
+          } else if (type === 'right') {
+            leadSynth.triggerAttackRelease('E5', '16n', now);
+            leadSynth.triggerAttackRelease('B5', '8n', now + 0.07);
+          } else if (type === 'wrong') {
+            leadSynth.triggerAttackRelease('D#4', '16n', now);
+            leadSynth.triggerAttackRelease('A3', '8n', now + 0.08);
+          }
+        } catch (err) {
+          // Ignore transient Tone scheduling collisions
+        }
+      }
+
+      if (audioToggleBtn) {
+        audioToggleBtn.addEventListener('click', async () => {
+          if (!audioUnlocked) {
+            await unlockAndStartAudio();
+            return;
+          }
+          isMuted = !isMuted;
+          if (isMuted) {
+            if (musicLoopTimer) {
+              clearInterval(musicLoopTimer);
+              musicLoopTimer = null;
+            }
+          } else {
+            musicStep = 0;
+            startMusicScheduler();
+          }
+          updateAudioToggleUi();
+        });
+      }
+
+      // Populate twinkling stars across the starry night sky layer
+      const starrySkyLayer = document.getElementById('starry-sky-layer');
+      if (starrySkyLayer) {
+        for (let i = 0; i < 46; i++) {
+          const star = document.createElement('div');
+          star.className = 'sky-star';
+          const size = (i % 3 === 0) ? 3 : (i % 2 === 0 ? 2 : 1.5);
+          star.style.width = `${size}px`;
+          star.style.height = `${size}px`;
+          star.style.top = `${((i * 19 + 7) % 94)}%`;
+          star.style.left = `${((i * 31 + 11) % 96)}%`;
+          star.style.setProperty('--twinkle-dur', `${2.4 + (i % 5) * 0.9}s`);
+          star.style.setProperty('--twinkle-delay', `${(i % 7) * 0.45}s`);
+          starrySkyLayer.appendChild(star);
+        }
+      }
+
+      // ============================================================
+      // 1 & 2. OPENING CURTAIN LAYER & OPENING CHAPTER
+      // ============================================================
+      const layerCurtainEl = document.getElementById('layer-curtain');
+      const playAnywaysBtn = document.getElementById('play-anyways-btn');
+      const stageCurtainOverlay = document.getElementById('stage-curtain-overlay');
+      const layerNextChapterEl = document.getElementById('layer-next-chapter');
+      const chapterScanningBox = document.getElementById('chapter-scanning-box');
+      const chapterScanStatus = document.getElementById('chapter-scan-status');
+      const chapterScanResult = document.getElementById('chapter-scan-result');
+      const chapterScanBar = document.getElementById('chapter-scan-bar');
+      const chapterPromptBox = document.getElementById('chapter-prompt-box');
+      const chapterAfterReplyBox = document.getElementById('chapter-after-reply-box');
+      const chapterReplyForm = document.getElementById('chapter-reply-form');
+      const chapterReplyInput = document.getElementById('chapter-reply-input');
+      const chapterRecordedReply = document.getElementById('chapter-recorded-reply');
+      const chapterEnterMainBtn = document.getElementById('chapter-enter-main-btn');
+      const chapterChips = document.querySelectorAll('.chapter-chip');
+
+      const closingCurtainBanner = document.getElementById('closing-curtain-banner');
+      const curtainReplayBtn = document.getElementById('curtain-replay-btn');
+
+      const stageGamesEl = document.getElementById('stage-games');
+      const stageCakeEl = document.getElementById('stage-cake');
+      const statusLed = document.getElementById('status-led');
+
+      let chapterScanTimeout = null;
+      let chapterRevealTimeout = null;
+      let curtainPartTimeout = null;
+      let curtainHideTimeout = null;
+      let closingBannerTimeout = null;
+
+      function clearCurtainTimers() {
+        if (chapterScanTimeout) {
+          clearTimeout(chapterScanTimeout);
+          chapterScanTimeout = null;
+        }
+        if (chapterRevealTimeout) {
+          clearTimeout(chapterRevealTimeout);
+          chapterRevealTimeout = null;
+        }
+        if (curtainPartTimeout) {
+          clearTimeout(curtainPartTimeout);
+          curtainPartTimeout = null;
+        }
+        if (curtainHideTimeout) {
+          clearTimeout(curtainHideTimeout);
+          curtainHideTimeout = null;
+        }
+        if (closingBannerTimeout) {
+          clearTimeout(closingBannerTimeout);
+          closingBannerTimeout = null;
+        }
+      }
+
+      function showLayer0CurtainStart() {
+        clearCurtainTimers();
+        setSceneMood('curtain');
+        if (closingCurtainBanner) {
+          closingCurtainBanner.classList.remove('visible');
+          closingCurtainBanner.classList.add('hidden-banner');
+        }
+        if (stageCurtainOverlay) {
+          stageCurtainOverlay.classList.add('hidden-curtain');
+          stageCurtainOverlay.classList.remove('parted');
+        }
+        if (layerNextChapterEl) layerNextChapterEl.classList.add('hidden');
+        if (stageGamesEl) stageGamesEl.classList.add('hidden');
+        if (stageCakeEl) {
+          stageCakeEl.classList.add('hidden');
+          stageCakeEl.classList.remove('flex');
+        }
+        if (layerCurtainEl) layerCurtainEl.classList.remove('hidden');
+
+        if (chapterScanningBox) chapterScanningBox.classList.remove('hidden');
+        if (chapterScanStatus) {
+          chapterScanStatus.textContent = 'scanning the birthday item...';
+          chapterScanStatus.classList.add('animate-pulse');
+        }
+        if (chapterScanResult) chapterScanResult.classList.add('hidden');
+        if (chapterScanBar) chapterScanBar.style.width = '30%';
+        if (chapterPromptBox) chapterPromptBox.classList.add('hidden');
+        if (chapterAfterReplyBox) chapterAfterReplyBox.classList.add('hidden');
+        if (chapterReplyInput) chapterReplyInput.value = '';
+      }
+
+      function partOpeningCurtains() {
+        clearCurtainTimers();
+        setSceneMood('curtain');
+        playSfx('curtain');
+        if (layerCurtainEl) layerCurtainEl.classList.add('hidden');
+        if (layerNextChapterEl) layerNextChapterEl.classList.remove('hidden');
+        if (chapterScanningBox) chapterScanningBox.classList.remove('hidden');
+        if (chapterScanStatus) {
+          chapterScanStatus.textContent = 'scanning the birthday item...';
+          chapterScanStatus.classList.add('animate-pulse');
+        }
+        if (chapterScanResult) chapterScanResult.classList.add('hidden');
+        if (chapterScanBar) chapterScanBar.style.width = '35%';
+        if (chapterPromptBox) chapterPromptBox.classList.add('hidden');
+        if (chapterAfterReplyBox) chapterAfterReplyBox.classList.add('hidden');
+
+        if (stageCurtainOverlay) {
+          stageCurtainOverlay.classList.remove('hidden-curtain', 'parted');
+          void stageCurtainOverlay.offsetWidth;
+          curtainPartTimeout = setTimeout(() => {
+            stageCurtainOverlay.classList.add('parted');
+          }, 50);
+          curtainHideTimeout = setTimeout(() => {
+            stageCurtainOverlay.classList.add('hidden-curtain');
+          }, 1050);
+        }
+
+        // Phase 1: Scan for ~2s, then reveal the 99 percent sagitterrorist reading
+        chapterRevealTimeout = setTimeout(() => {
+          if (chapterScanStatus) {
+            chapterScanStatus.textContent = 'scan complete!';
+            chapterScanStatus.classList.remove('animate-pulse');
+          }
+          if (chapterScanBar) chapterScanBar.style.width = '100%';
+          if (chapterScanResult) chapterScanResult.classList.remove('hidden');
+        }, 2000);
+
+        // Phase 2: Hold the result on screen for ~3s more (5s total) before showing the back-pain prompt
+        chapterScanTimeout = setTimeout(() => {
+          if (chapterScanningBox) chapterScanningBox.classList.add('hidden');
+          if (chapterPromptBox) chapterPromptBox.classList.remove('hidden');
+        }, 5000);
+      }
+
+      function triggerClosingCurtains() {
+        clearCurtainTimers();
+        setSceneMood('finale');
+        playSfx('curtain');
+        if (stageCurtainOverlay) {
+          stageCurtainOverlay.classList.remove('hidden-curtain');
+          stageCurtainOverlay.classList.add('parted');
+          void stageCurtainOverlay.offsetWidth;
+          requestAnimationFrame(() => {
+            stageCurtainOverlay.classList.remove('parted');
+          });
+        }
+        if (closingCurtainBanner) {
+          closingCurtainBanner.classList.remove('hidden-banner');
+          closingBannerTimeout = setTimeout(() => {
+            closingCurtainBanner.classList.add('visible');
+          }, 420);
+        }
+        fireConfetti(110);
+      }
+
+      function hideClosingCurtainOverlay(immediate = true) {
+        clearCurtainTimers();
+        if (closingCurtainBanner) {
+          closingCurtainBanner.classList.remove('visible');
+          closingCurtainBanner.classList.add('hidden-banner');
+        }
+        if (stageCurtainOverlay) {
+          stageCurtainOverlay.classList.add('parted');
+          if (immediate) {
+            stageCurtainOverlay.classList.add('hidden-curtain');
+          } else {
+            curtainHideTimeout = setTimeout(() => {
+              stageCurtainOverlay.classList.add('hidden-curtain');
+            }, 980);
+          }
+        }
+      }
+
+      if (playAnywaysBtn) {
+        playAnywaysBtn.addEventListener('click', async () => {
+          isMuted = false;
+          await unlockAndStartAudio();
+          partOpeningCurtains();
+        });
+      }
+
+      chapterChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const val = chip.getAttribute('data-quick-reply') || '';
+          if (chapterReplyInput) {
+            chapterReplyInput.value = val;
+            chapterReplyInput.focus();
+          }
+        });
+      });
+
+      if (chapterReplyForm) {
+        chapterReplyForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const replyVal = chapterReplyInput ? chapterReplyInput.value.trim() : '';
+          if (!replyVal) return;
+          if (chapterRecordedReply) chapterRecordedReply.textContent = replyVal;
+          if (chapterPromptBox) chapterPromptBox.classList.add('hidden');
+          if (chapterAfterReplyBox) chapterAfterReplyBox.classList.remove('hidden');
+        });
+      }
+
+      if (chapterEnterMainBtn) {
+        chapterEnterMainBtn.addEventListener('click', () => {
+          enterStage2Games();
+        });
+      }
+
+      // ============================================================
+      // 3. STAGE 2: GRAY LITTLE RAT RUNNER (TARGET XP: 500)
+      // ============================================================
+      const badgeGame1 = document.getElementById('badge-game-1');
+      const minigame1Panel = document.getElementById('minigame-1-panel');
+
+      const runnerCanvas = document.getElementById('runner-canvas');
+      const rCtx = runnerCanvas ? runnerCanvas.getContext('2d') : null;
+      const runnerScoreEl = document.getElementById('runner-score');
+      const runnerChancesEl = document.getElementById('runner-chances');
+      const runnerStatusMsg = document.getElementById('runner-status-msg');
+      const runnerDeathOverlay = document.getElementById('runner-death-overlay');
+      const runnerDeathCountdown = document.getElementById('runner-death-countdown');
+      const runnerResumeBtn = document.getElementById('runner-resume-btn');
+      const runnerJumpBtn = document.getElementById('runner-jump-btn');
+      const runnerDuckBtn = document.getElementById('runner-duck-btn');
+
+      let runnerActive = false;
+      let runnerPausedForDeath = false;
+      let runnerDeathTimerId = null;
+      let runnerCountdownInterval = null;
+      let runnerAnimId = null;
+      let runnerXp = 0;
+      let runnerLives = 2;
+      const RUNNER_MAX_LIVES = 2;
+      let runnerFrame = 0;
+      let runnerSpawnTimer = 0;
+      let runnerObstacles = [];
+      let runnerCheeses = [];
+      let runnerParrots = [];
+      const RUNNER_TARGET_XP = 500;
+      const RUNNER_SPEEDUP_XP = 250;
+      const ratPlayer = {
+        x: 54,
+        y: 0,
+        vy: 0,
+        width: 34,
+        height: 24,
+        grounded: true,
+        ducking: false,
+        duckTimer: 0
+      };
+
+      function resizeRunnerCanvas() {
+        if (!runnerCanvas) return;
+        const rect = runnerCanvas.getBoundingClientRect();
+        runnerCanvas.width = Math.max(280, Math.floor(rect.width || 480));
+        runnerCanvas.height = 215;
+        const groundY = runnerCanvas.height - 34;
+        if (ratPlayer.grounded) {
+          ratPlayer.y = groundY - (ratPlayer.ducking ? 14 : 24);
+        }
+      }
+
+      function updateRunnerHud() {
+        if (runnerScoreEl) runnerScoreEl.textContent = String(Math.floor(runnerXp));
+        if (runnerChancesEl) runnerChancesEl.textContent = String(runnerLives);
+      }
+
+      function triggerRatJump() {
+        if (!runnerActive) return;
+        if (ratPlayer.grounded) {
+          ratPlayer.ducking = false;
+          ratPlayer.duckTimer = 0;
+          ratPlayer.height = 24;
+          ratPlayer.vy = -10.8;
+          ratPlayer.grounded = false;
+          playSfx('jump');
+        }
+      }
+
+      function triggerRatDuck() {
+        if (!runnerActive) return;
+        ratPlayer.ducking = true;
+        ratPlayer.duckTimer = 34;
+        ratPlayer.height = 14;
+        playSfx('duck');
+        if (runnerCanvas && ratPlayer.grounded) {
+          ratPlayer.y = runnerCanvas.height - 34 - ratPlayer.height;
+        }
+      }
+
+      function stopRunnerGame() {
+        runnerActive = false;
+        runnerPausedForDeath = false;
+        if (runnerDeathTimerId) {
+          clearTimeout(runnerDeathTimerId);
+          runnerDeathTimerId = null;
+        }
+        if (runnerCountdownInterval) {
+          clearInterval(runnerCountdownInterval);
+          runnerCountdownInterval = null;
+        }
+        if (runnerDeathOverlay) {
+          runnerDeathOverlay.classList.add('hidden');
+        }
+        if (runnerResumeBtn) {
+          runnerResumeBtn.classList.add('hidden');
+          runnerResumeBtn.disabled = true;
+        }
+        if (runnerAnimId) {
+          cancelAnimationFrame(runnerAnimId);
+          runnerAnimId = null;
+        }
+      }
+
+      function handleMouseDeath(predatorName) {
+        if (runnerLives > 1) {
+          runnerLives -= 1;
+          updateRunnerHud();
+          playSfx('bonk');
+          if (runnerStatusMsg) {
+            runnerStatusMsg.textContent = `Hit by a ${predatorName}! 1 life remaining (${runnerLives}/${RUNNER_MAX_LIVES}).`;
+          }
+          runnerAnimId = requestAnimationFrame(runnerLoop);
+          return;
+        }
+
+        runnerActive = false;
+        runnerPausedForDeath = true;
+        if (runnerAnimId) {
+          cancelAnimationFrame(runnerAnimId);
+          runnerAnimId = null;
+        }
+        runnerLives = 0;
+        updateRunnerHud();
+        playSfx('bonk');
+
+        if (runnerStatusMsg) {
+          runnerStatusMsg.textContent = `Too bad, try again ^^ (${predatorName} took your last life).`;
+        }
+
+        if (runnerDeathOverlay) {
+          runnerDeathOverlay.classList.remove('hidden');
+        }
+        if (runnerResumeBtn) {
+          runnerResumeBtn.classList.add('hidden');
+          runnerResumeBtn.disabled = true;
+        }
+
+        let secondsLeft = 3;
+        if (runnerDeathCountdown) {
+          runnerDeathCountdown.textContent = `Stopped for ${secondsLeft}s...`;
+        }
+
+        if (runnerCountdownInterval) clearInterval(runnerCountdownInterval);
+        if (runnerDeathTimerId) clearTimeout(runnerDeathTimerId);
+
+        runnerCountdownInterval = setInterval(() => {
+          secondsLeft -= 1;
+          if (secondsLeft > 0 && runnerDeathCountdown) {
+            runnerDeathCountdown.textContent = `Stopped for ${secondsLeft}s...`;
+          } else if (runnerCountdownInterval) {
+            clearInterval(runnerCountdownInterval);
+            runnerCountdownInterval = null;
+          }
+        }, 1000);
+
+        runnerDeathTimerId = setTimeout(() => {
+          if (runnerCountdownInterval) {
+            clearInterval(runnerCountdownInterval);
+            runnerCountdownInterval = null;
+          }
+          if (runnerDeathCountdown) {
+            runnerDeathCountdown.textContent = 'Ready when you are.';
+          }
+          if (runnerResumeBtn) {
+            runnerResumeBtn.disabled = false;
+            runnerResumeBtn.classList.remove('hidden');
+          }
+        }, 3000);
+      }
+
+      function resumeRunnerAfterDeath() {
+        if (!runnerPausedForDeath) return;
+        if (runnerDeathTimerId) {
+          clearTimeout(runnerDeathTimerId);
+          runnerDeathTimerId = null;
+        }
+        if (runnerCountdownInterval) {
+          clearInterval(runnerCountdownInterval);
+          runnerCountdownInterval = null;
+        }
+        if (runnerDeathOverlay) {
+          runnerDeathOverlay.classList.add('hidden');
+        }
+        if (runnerResumeBtn) {
+          runnerResumeBtn.classList.add('hidden');
+          runnerResumeBtn.disabled = true;
+        }
+        runnerPausedForDeath = false;
+        runnerLives = RUNNER_MAX_LIVES;
+        runnerXp = 0;
+        runnerObstacles = [];
+        runnerCheeses = [];
+        runnerParrots = [];
+        runnerSpawnTimer = 42;
+        ratPlayer.vy = 0;
+        ratPlayer.grounded = true;
+        ratPlayer.ducking = false;
+        ratPlayer.duckTimer = 0;
+        ratPlayer.height = 24;
+        updateRunnerHud();
+        if (runnerStatusMsg) {
+          runnerStatusMsg.textContent = 'Resumed at 0 XP with 2/2 lives! Watch out for cats and sharks.';
+        }
+        runnerActive = true;
+        resizeRunnerCanvas();
+        runnerLoop();
+      }
+
+      function startRunnerGame() {
+        stopRunnerGame();
+        runnerXp = 0;
+        runnerLives = RUNNER_MAX_LIVES;
+        runnerFrame = 0;
+        runnerSpawnTimer = 42;
+        runnerObstacles = [];
+        runnerCheeses = [];
+        runnerParrots = [];
+        ratPlayer.vy = 0;
+        ratPlayer.grounded = true;
+        ratPlayer.ducking = false;
+        ratPlayer.duckTimer = 0;
+        ratPlayer.height = 24;
+        updateRunnerHud();
+        if (runnerStatusMsg) {
+          runnerStatusMsg.textContent = 'You have 2 lives! Survive to 500 XP—speed ramps up past 250 XP.';
+        }
+        runnerActive = true;
+        resizeRunnerCanvas();
+        runnerLoop();
+      }
+
+      function getRunnerSpeedMultiplier() {
+        if (runnerXp <= RUNNER_SPEEDUP_XP) return 1;
+        const extraProgress = Math.min(1, (runnerXp - RUNNER_SPEEDUP_XP) / (RUNNER_TARGET_XP - RUNNER_SPEEDUP_XP));
+        return 1.18 + extraProgress * 0.42;
+      }
+
+      function runnerLoop() {
+        if (!runnerActive || !rCtx || !runnerCanvas) return;
+        runnerFrame += 1;
+        const speedMult = getRunnerSpeedMultiplier();
+        // Slow XP gain by staying alive (~9 XP per second at 60fps)
+        runnerXp = Math.min(RUNNER_TARGET_XP, runnerXp + 0.15);
+        if (runnerFrame % 4 === 0) {
+          updateRunnerHud();
+        }
+
+        const w = runnerCanvas.width;
+        const h = runnerCanvas.height;
+        const groundY = h - 34;
+
+        rCtx.fillStyle = '#0f172a';
+        rCtx.fillRect(0, 0, w, h);
+
+        rCtx.fillStyle = '#1e293b';
+        rCtx.fillRect(0, groundY, w, h - groundY);
+        rCtx.strokeStyle = '#f59e0b';
+        rCtx.lineWidth = 2;
+        rCtx.beginPath();
+        rCtx.moveTo(0, groundY);
+        rCtx.lineTo(w, groundY);
+        rCtx.stroke();
+
+        if (ratPlayer.ducking) {
+          ratPlayer.duckTimer -= 1;
+          if (ratPlayer.duckTimer <= 0) {
+            ratPlayer.ducking = false;
+            ratPlayer.height = 24;
+            if (ratPlayer.grounded) {
+              ratPlayer.y = groundY - ratPlayer.height;
+            }
+          }
+        }
+
+        if (!ratPlayer.grounded) {
+          ratPlayer.y += ratPlayer.vy;
+          ratPlayer.vy += 0.56;
+          if (ratPlayer.y >= groundY - ratPlayer.height) {
+            ratPlayer.y = groundY - ratPlayer.height;
+            ratPlayer.vy = 0;
+            ratPlayer.grounded = true;
+          }
+        } else {
+          ratPlayer.y = groundY - ratPlayer.height;
+        }
+
+        runnerSpawnTimer -= 1;
+        if (runnerSpawnTimer <= 0) {
+          const isShark = Math.random() < 0.46;
+          const speedBoost = Math.min(2.4, (runnerXp / RUNNER_TARGET_XP) * 2.4);
+          runnerObstacles.push({
+            type: isShark ? 'shark' : 'cat',
+            x: w + 24,
+            y: isShark ? groundY - 46 : groundY - 26,
+            w: 28,
+            h: 26,
+            speed: (4.8 + speedBoost) * speedMult,
+            passed: false
+          });
+          // Scarce cheese awards (life) and green parrot bonus XP pickups
+          if (Math.random() < 0.16) {
+            runnerCheeses.push({
+              x: w + 125,
+              y: isShark ? groundY - 22 : groundY - 58,
+              r: 11
+            });
+          }
+          if (Math.random() < 0.22) {
+            runnerParrots.push({
+              x: w + 175,
+              y: isShark ? groundY - 66 : groundY - 46,
+              r: 12
+            });
+          }
+          const baseInterval = Math.max(54, 74 - Math.floor((runnerXp / RUNNER_TARGET_XP) * 18) + Math.floor(Math.random() * 24));
+          runnerSpawnTimer = Math.max(28, Math.round(baseInterval / speedMult));
+        }
+
+        for (let i = runnerObstacles.length - 1; i >= 0; i--) {
+          const ob = runnerObstacles[i];
+          ob.x -= ob.speed;
+
+          if (ob.type === 'shark') {
+            rCtx.font = '24px sans-serif';
+            rCtx.textBaseline = 'top';
+            rCtx.fillText('🦈', ob.x, ob.y - 2);
+          } else {
+            rCtx.save();
+            rCtx.font = '24px sans-serif';
+            rCtx.textBaseline = 'top';
+            rCtx.fillText('🐈', ob.x, ob.y - 2);
+            rCtx.restore();
+          }
+
+          const hit =
+            ratPlayer.x + 4 < ob.x + ob.w - 4 &&
+            ratPlayer.x + ratPlayer.width - 4 > ob.x + 4 &&
+            ratPlayer.y + 3 < ob.y + ob.h - 3 &&
+            ratPlayer.y + ratPlayer.height - 2 > ob.y + 3;
+
+          if (hit) {
+            runnerObstacles.splice(i, 1);
+            const predatorName = ob.type === 'shark' ? 'shark' : 'cat';
+            handleMouseDeath(predatorName);
+            return;
+          }
+
+          if (!ob.passed && ob.x + ob.w < ratPlayer.x) {
+            ob.passed = true;
+            runnerXp = Math.min(RUNNER_TARGET_XP, runnerXp + 4);
+            updateRunnerHud();
+          }
+
+          if (ob.x + ob.w < -30) {
+            runnerObstacles.splice(i, 1);
+          }
+        }
+
+        for (let i = runnerCheeses.length - 1; i >= 0; i--) {
+          const ch = runnerCheeses[i];
+          ch.x -= 5.2 * speedMult;
+          rCtx.font = '20px sans-serif';
+          rCtx.textBaseline = 'middle';
+          rCtx.fillText('🧀', ch.x - 10, ch.y);
+
+          const dx = ratPlayer.x + ratPlayer.width / 2 - ch.x;
+          const dy = ratPlayer.y + ratPlayer.height / 2 - ch.y;
+          if (Math.hypot(dx, dy) < 24) {
+            runnerCheeses.splice(i, 1);
+            runnerLives = Math.min(RUNNER_MAX_LIVES, runnerLives + 1);
+            playSfx('cheese');
+            updateRunnerHud();
+            if (runnerStatusMsg) {
+              runnerStatusMsg.textContent = `Cheese grabbed! Lives: ${runnerLives}/${RUNNER_MAX_LIVES}.`;
+            }
+          }
+        }
+
+        for (let i = runnerParrots.length - 1; i >= 0; i--) {
+          const pr = runnerParrots[i];
+          pr.x -= 5.4 * speedMult;
+
+          // Render parrot with a crisp green hue and green pill tag instead of a yellow circle
+          rCtx.save();
+          rCtx.font = '22px sans-serif';
+          rCtx.textBaseline = 'middle';
+          rCtx.filter = 'hue-rotate(92deg) saturate(2.1) brightness(1.08)';
+          rCtx.fillText('🦜', pr.x - 11, pr.y);
+          rCtx.filter = 'none';
+
+          rCtx.fillStyle = '#15803d';
+          rCtx.strokeStyle = '#86efac';
+          rCtx.lineWidth = 1.5;
+          rCtx.beginPath();
+          rCtx.roundRect(pr.x - 18, pr.y - 23, 36, 13, 6);
+          rCtx.fill();
+          rCtx.stroke();
+
+          rCtx.fillStyle = '#ffffff';
+          rCtx.font = 'bold 8px "JetBrains Mono", monospace';
+          rCtx.textAlign = 'center';
+          rCtx.fillText('+25 XP', pr.x, pr.y - 16.5);
+          rCtx.restore();
+
+          const dx = ratPlayer.x + ratPlayer.width / 2 - pr.x;
+          const dy = ratPlayer.y + ratPlayer.height / 2 - pr.y;
+          if (Math.hypot(dx, dy) < 25) {
+            runnerParrots.splice(i, 1);
+            runnerXp = Math.min(RUNNER_TARGET_XP, runnerXp + 25);
+            playSfx('cheese');
+            updateRunnerHud();
+            if (runnerStatusMsg) {
+              runnerStatusMsg.textContent = 'Green parrot caught! +25 bonus XP.';
+            }
+          }
+
+          if (pr.x < -30) {
+            runnerParrots.splice(i, 1);
+          }
+        }
+
+        rCtx.save();
+        rCtx.fillStyle = '#9ca3af';
+        rCtx.strokeStyle = '#111827';
+        rCtx.lineWidth = 2;
+        rCtx.beginPath();
+        rCtx.roundRect(ratPlayer.x, ratPlayer.y, ratPlayer.width, ratPlayer.height, 8);
+        rCtx.fill();
+        rCtx.stroke();
+        rCtx.fillStyle = '#f472b6';
+        rCtx.beginPath();
+        rCtx.arc(ratPlayer.x + ratPlayer.width - 10, ratPlayer.y + 3, 4, 0, Math.PI * 2);
+        rCtx.fill();
+        rCtx.fillStyle = '#111827';
+        rCtx.beginPath();
+        rCtx.arc(ratPlayer.x + ratPlayer.width - 6, ratPlayer.y + 8, 2, 0, Math.PI * 2);
+        rCtx.fill();
+        rCtx.restore();
+
+        if (runnerXp >= RUNNER_TARGET_XP) {
+          runnerXp = RUNNER_TARGET_XP;
+          updateRunnerHud();
+          stopRunnerGame();
+          if (badgeGame1) {
+            badgeGame1.textContent = 'Gray Rat: Cleared ✓';
+            badgeGame1.className = 'px-2.5 py-1 rounded-lg bg-emerald-200 border border-emerald-900 text-emerald-950';
+          }
+          unlockStage3Reveal();
+          return;
+        }
+
+        runnerAnimId = requestAnimationFrame(runnerLoop);
+      }
+
+      if (runnerJumpBtn) {
+        runnerJumpBtn.addEventListener('click', triggerRatJump);
+      }
+      if (runnerDuckBtn) {
+        runnerDuckBtn.addEventListener('click', triggerRatDuck);
+      }
+      if (runnerResumeBtn) {
+        runnerResumeBtn.addEventListener('click', resumeRunnerAfterDeath);
+      }
+      if (runnerCanvas) {
+        runnerCanvas.addEventListener('click', triggerRatJump);
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (runnerActive) {
+          if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+            e.preventDefault();
+            triggerRatJump();
+          } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+            e.preventDefault();
+            triggerRatDuck();
+          }
+        }
+      });
+
+      function enterStage2Games() {
+        setSceneMood('games');
+        if (layerCurtainEl) layerCurtainEl.classList.add('hidden');
+        if (layerNextChapterEl) layerNextChapterEl.classList.add('hidden');
+        if (stageCakeEl) {
+          stageCakeEl.classList.add('hidden');
+          stageCakeEl.classList.remove('flex');
+        }
+        if (stageGamesEl) stageGamesEl.classList.remove('hidden');
+        if (minigame1Panel) minigame1Panel.classList.remove('hidden');
+
+        if (badgeGame1) {
+          badgeGame1.textContent = 'Gray Rat: Active';
+          badgeGame1.className = 'px-2.5 py-1 rounded-lg bg-amber-200 border border-stone-900 text-stone-950';
+        }
+
+        startRunnerGame();
+      }
+
+      function unlockStage3Reveal() {
+        setSceneMood('emo');
+        playSfx('pipebomb');
+        if (stageGamesEl) stageGamesEl.classList.add('hidden');
+        if (stageCakeEl) {
+          stageCakeEl.classList.remove('hidden');
+          stageCakeEl.classList.add('flex');
+        }
+        if (statusLed) {
+          statusLed.classList.remove('bg-red-600');
+          statusLed.classList.add('bg-amber-500');
+        }
+        fireConfetti(90);
+      }
+
+      // ============================================================
+      // 3B. WISH + 5 CANDLES + ZIGZAG CAKE CUT -> PIPEBOMB REVEAL
+      // ============================================================
+      const wishInput = document.getElementById('wish-input');
+      const wishSaveBtn = document.getElementById('wish-save-btn');
+      const wishNotedToast = document.getElementById('wish-noted-toast');
+      const cakeCandleGroups = document.querySelectorAll('.cake-candle-group');
+      const litCandlesCountEl = document.getElementById('lit-candles-count');
+      const blowCandlesBtn = document.getElementById('blow-candles-btn');
+      const cutCakeBtn = document.getElementById('cut-cake-btn');
+      const cakeLeftHalf = document.getElementById('cake-left-half');
+      const cakeRightHalf = document.getElementById('cake-right-half');
+      const cakeInnerBomb = document.getElementById('cake-inner-bomb');
+      const cakeZigzagLine = document.getElementById('cake-zigzag-line');
+      const pipebombInsideReveal = document.getElementById('pipebomb-inside-reveal');
+      const postCandlesSection = document.getElementById('post-candles-section');
+
+      let cakeCandleLit = [true, true, true, true, true];
+      let cakeCutDone = false;
+
+      function syncCakeCutButtonState() {
+        const anyLit = cakeCandleLit.some(Boolean);
+        if (litCandlesCountEl) {
+          litCandlesCountEl.textContent = String(cakeCandleLit.filter(Boolean).length);
+        }
+        if (!cutCakeBtn) return;
+        if (!anyLit && !cakeCutDone) {
+          cutCakeBtn.disabled = false;
+          cutCakeBtn.className = 'flex-1 py-2.5 px-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white border-2 border-stone-950 font-extrabold text-xs shadow-[2px_2px_0px_#1b1815] transition cursor-pointer';
+        } else if (cakeCutDone) {
+          cutCakeBtn.disabled = true;
+          cutCakeBtn.className = 'flex-1 py-2.5 px-3.5 rounded-xl bg-emerald-200 text-emerald-950 border-2 border-stone-950 font-extrabold text-xs cursor-default';
+          cutCakeBtn.textContent = 'Cake Sliced ✓';
+        } else {
+          cutCakeBtn.disabled = true;
+          cutCakeBtn.className = 'flex-1 py-2.5 px-3.5 rounded-xl bg-stone-300 text-stone-600 border-2 border-stone-950 font-extrabold text-xs cursor-not-allowed';
+          cutCakeBtn.textContent = 'Zigzag Cut Cake 🔪';
+        }
+      }
+
+      function extinguishCakeCandle(idx) {
+        if (!cakeCandleLit[idx]) return;
+        cakeCandleLit[idx] = false;
+        const group = document.querySelector(`.cake-candle-group[data-cidx="${idx}"]`);
+        if (group) {
+          const flame = group.querySelector('.c-flame');
+          if (flame) flame.style.opacity = '0';
+        }
+        playSfx('duck');
+        syncCakeCutButtonState();
+      }
+
+      function resetCakeStageState() {
+        cakeCandleLit = [true, true, true, true, true];
+        cakeCutDone = false;
+        if (wishInput) wishInput.value = '';
+        if (wishNotedToast) wishNotedToast.classList.add('hidden');
+        cakeCandleGroups.forEach((group) => {
+          group.style.transition = '';
+          group.style.transform = group.getAttribute('transform') || '';
+          const flame = group.querySelector('.c-flame');
+          if (flame) flame.style.opacity = '1';
+        });
+        if (cakeLeftHalf) cakeLeftHalf.style.transform = 'translateX(0px)';
+        if (cakeRightHalf) cakeRightHalf.style.transform = 'translateX(0px)';
+        if (cakeInnerBomb) {
+          cakeInnerBomb.style.opacity = '0';
+          cakeInnerBomb.style.transform = 'scale(0.5)';
+        }
+        if (cakeZigzagLine) cakeZigzagLine.style.opacity = '0';
+        if (pipebombInsideReveal) pipebombInsideReveal.classList.add('hidden');
+        if (postCandlesSection) postCandlesSection.classList.add('hidden');
+        syncCakeCutButtonState();
+      }
+
+      if (wishSaveBtn) {
+        wishSaveBtn.addEventListener('click', () => {
+          if (wishNotedToast) wishNotedToast.classList.remove('hidden');
+          playSfx('cheese');
+        });
+      }
+
+      if (wishInput) {
+        wishInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (wishNotedToast) wishNotedToast.classList.remove('hidden');
+            playSfx('cheese');
+          }
+        });
+      }
+
+      cakeCandleGroups.forEach((group) => {
+        group.addEventListener('click', () => {
+          const idx = parseInt(group.getAttribute('data-cidx') || '0', 10);
+          extinguishCakeCandle(idx);
+        });
+      });
+
+      if (blowCandlesBtn) {
+        blowCandlesBtn.addEventListener('click', () => {
+          [0, 1, 2, 3, 4].forEach((idx, i) => {
+            setTimeout(() => extinguishCakeCandle(idx), i * 80);
+          });
+        });
+      }
+
+      if (cutCakeBtn) {
+        cutCakeBtn.addEventListener('click', () => {
+          if (cakeCandleLit.some(Boolean) || cakeCutDone) return;
+          cakeCutDone = true;
+          syncCakeCutButtonState();
+          if (cakeZigzagLine) cakeZigzagLine.style.opacity = '1';
+          if (cakeLeftHalf) cakeLeftHalf.style.transform = 'translateX(-28px) rotate(-3deg)';
+          if (cakeRightHalf) cakeRightHalf.style.transform = 'translateX(28px) rotate(3deg)';
+          cakeCandleGroups.forEach((group) => {
+            const idx = parseInt(group.getAttribute('data-cidx') || '0', 10);
+            const shiftX = idx <= 2 ? -26 : 26;
+            group.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)';
+            const baseTransform = group.getAttribute('transform') || '';
+            group.style.transform = `translate(${shiftX}px, 0px) ${baseTransform}`;
+          });
+          if (cakeInnerBomb) {
+            cakeInnerBomb.style.opacity = '1';
+            cakeInnerBomb.style.transform = 'scale(1)';
+          }
+          if (pipebombInsideReveal) pipebombInsideReveal.classList.remove('hidden');
+          if (postCandlesSection) postCandlesSection.classList.remove('hidden');
+          playSfx('pipebomb');
+          fireConfetti(120);
+        });
+      }
+
+      syncCakeCutButtonState();
+
+      // ============================================================
+      // 4 & 5. SURPRISE REVEAL & 1997 ERA EMO TRIVIA
+      // ============================================================
+      const replayBtn = document.getElementById('replay-btn');
+      const postTriviaBackpainBox = document.getElementById('post-trivia-backpain-box');
+      const backpainCheckupBtns = document.querySelectorAll('.backpain-checkup-btn');
+      const backpainCheckupNote = document.getElementById('backpain-checkup-note');
+      const closeCurtainsAfterCheckupBtn = document.getElementById('close-curtains-after-checkup-btn');
+
+      const emoTriviaQuestions = [
+        {
+          prompt: 'Which accessory belonged in a 2008 middle school locker right next to a battered spiral notebook?',
+          options: [
+            'A stack of rubber neon wristbands and studded belt drama',
+            'A gold pocket watch and fresh parchment',
+            'A laminated grocery list from 1989'
+          ],
+          correctIndex: 0,
+          rightNote: 'RIGHT. Peak 2008 hallway credibility secured without breaking a sweat.',
+          wrongNote: 'WRONG. That belongs in a filing cabinet, not a mid 2000s scene era.'
+        },
+        {
+          prompt: 'What is the most dramatic way to stare out a rainy window at noon in 2010?',
+          options: [
+            'Slowly holding a cold mug while nobody asked you to',
+            'Reading the warranty card on a toaster',
+            'Jogging cheerfully around the block'
+          ],
+          correctIndex: 0,
+          rightNote: 'RIGHT. Maximum theatrical sigh achieved with zero plot or effort.',
+          wrongNote: 'WRONG. Too upbeat and practical for dramatic rain window lore.'
+        },
+        {
+          prompt: 'Which playlist mood fits a sudden Tuesday inconvenience during the Tumblr era?',
+          options: [
+            'Loud guitars for a mild minor setback',
+            'Smooth elevator jazz for a hurricane',
+            'Whale noises during rush hour'
+          ],
+          correctIndex: 0,
+          rightNote: 'RIGHT. Overdramatic soundtrack officially stamped for a tiny inconvenience.',
+          wrongNote: 'WRONG. Wrong vibe entirely; bring back the loud guitars.'
+        }
+      ];
+
+      const triviaScoreBadge = document.getElementById('trivia-score-badge');
+      const triviaQuestionCounter = document.getElementById('trivia-question-counter');
+      const triviaPromptText = document.getElementById('trivia-prompt-text');
+      const triviaOptionsList = document.getElementById('trivia-options-list');
+      const triviaVerdictBox = document.getElementById('trivia-verdict-box');
+      const triviaVerdictHeading = document.getElementById('trivia-verdict-heading');
+      const triviaVerdictNote = document.getElementById('trivia-verdict-note');
+      const triviaNextBtn = document.getElementById('trivia-next-btn');
+
+      let currentTriviaIndex = 0;
+      let triviaCorrectCount = 0;
+      let currentQuestionAnswered = false;
+      let answeredQuestionSet = new Set();
+
+      function updateTriviaScoreBadge() {
+        if (!triviaScoreBadge) return;
+        triviaScoreBadge.textContent = `SCORE: ${triviaCorrectCount} / ${emoTriviaQuestions.length}`;
+      }
+
+      function resetBackpainCheckupBridge() {
+        if (postTriviaBackpainBox) postTriviaBackpainBox.classList.add('hidden');
+        if (backpainCheckupNote) {
+          backpainCheckupNote.classList.add('hidden');
+          backpainCheckupNote.textContent = '';
+        }
+      }
+
+      function revealBackpainCheckupIfComplete() {
+        if (answeredQuestionSet.size >= emoTriviaQuestions.length) {
+          if (postTriviaBackpainBox) {
+            postTriviaBackpainBox.classList.remove('hidden');
+          }
+        }
+      }
+
+      backpainCheckupBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const choice = btn.getAttribute('data-checkup-choice') || '';
+          if (backpainCheckupNote) {
+            backpainCheckupNote.textContent = `Noted: "${choice}" — take it easy on that spine before Bingo next month.`;
+            backpainCheckupNote.classList.remove('hidden');
+          }
+          playSfx('cheese');
+        });
+      });
+
+      if (closeCurtainsAfterCheckupBtn) {
+        closeCurtainsAfterCheckupBtn.addEventListener('click', () => {
+          triggerClosingCurtains();
+        });
+      }
+
+      function renderEmoTriviaQuestion() {
+        const q = emoTriviaQuestions[currentTriviaIndex];
+        if (!q) return;
+
+        currentQuestionAnswered = false;
+        updateTriviaScoreBadge();
+
+        if (triviaQuestionCounter) {
+          triviaQuestionCounter.textContent = `QUESTION ${currentTriviaIndex + 1} OF ${emoTriviaQuestions.length}`;
+        }
+        if (triviaPromptText) {
+          triviaPromptText.textContent = q.prompt;
+        }
+        if (triviaVerdictBox) {
+          triviaVerdictBox.classList.add('hidden');
+          triviaVerdictBox.className = 'hidden mt-3 p-3 rounded-xl bg-[#fbf7ec] border-2 border-stone-950 space-y-1';
+        }
+        if (triviaVerdictHeading) triviaVerdictHeading.textContent = '';
+        if (triviaVerdictNote) triviaVerdictNote.textContent = '';
+        if (triviaNextBtn) {
+          triviaNextBtn.textContent = currentTriviaIndex + 1 >= emoTriviaQuestions.length
+            ? 'Back to Question 1 🔄'
+            : 'Next Question ➡️';
+        }
+
+        if (triviaOptionsList) {
+          triviaOptionsList.innerHTML = '';
+          q.options.forEach((optText, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 rounded-xl bg-[#fbf7ec] hover:bg-amber-200 border-2 border-stone-950 text-stone-950 text-xs sm:text-sm font-bold shadow-[2px_2px_0px_#1b1815] transition cursor-pointer';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = optText;
+
+            const stampSpan = document.createElement('span');
+            stampSpan.className = 'hidden shrink-0 px-2 py-0.5 rounded font-mono-tech text-[10px] font-extrabold tracking-wider border border-stone-950';
+
+            btn.appendChild(labelSpan);
+            btn.appendChild(stampSpan);
+
+            btn.addEventListener('click', () => {
+              if (currentQuestionAnswered) return;
+              currentQuestionAnswered = true;
+              answeredQuestionSet.add(currentTriviaIndex);
+
+              const isCorrect = idx === q.correctIndex;
+              if (isCorrect) {
+                triviaCorrectCount += 1;
+                playSfx('right');
+              } else {
+                playSfx('wrong');
+              }
+              updateTriviaScoreBadge();
+
+              const allButtons = triviaOptionsList.querySelectorAll('button');
+              allButtons.forEach((otherBtn, otherIdx) => {
+                otherBtn.disabled = true;
+                otherBtn.classList.remove('hover:bg-amber-200', 'cursor-pointer');
+                const otherStamp = otherBtn.querySelector('span:last-child');
+
+                if (otherIdx === idx) {
+                  if (isCorrect) {
+                    otherBtn.className = 'w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 rounded-xl bg-emerald-200 border-2 border-stone-950 text-emerald-950 text-xs sm:text-sm font-extrabold shadow-[2px_2px_0px_#1b1815]';
+                    if (otherStamp) {
+                      otherStamp.textContent = 'RIGHT ✓';
+                      otherStamp.className = 'shrink-0 px-2 py-0.5 rounded bg-emerald-600 text-white font-mono-tech text-[10px] font-extrabold tracking-wider border border-stone-950';
+                    }
+                  } else {
+                    otherBtn.className = 'w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 rounded-xl bg-red-200 border-2 border-red-900 text-red-950 text-xs sm:text-sm font-extrabold shadow-[2px_2px_0px_#7f1d1d]';
+                    if (otherStamp) {
+                      otherStamp.textContent = 'WRONG ✕';
+                      otherStamp.className = 'shrink-0 px-2 py-0.5 rounded bg-red-600 text-white font-mono-tech text-[10px] font-extrabold tracking-wider border border-stone-950';
+                    }
+                  }
+                } else if (!isCorrect && otherIdx === q.correctIndex) {
+                  otherBtn.className = 'w-full flex items-center justify-between gap-2 text-left px-3.5 py-2.5 rounded-xl bg-emerald-100 border-2 border-emerald-800 text-emerald-950 text-xs sm:text-sm font-extrabold';
+                  if (otherStamp) {
+                    otherStamp.textContent = 'RIGHT ANSWER';
+                    otherStamp.className = 'shrink-0 px-2 py-0.5 rounded bg-emerald-600 text-white font-mono-tech text-[10px] font-extrabold tracking-wider border border-stone-950';
+                  }
+                } else {
+                  otherBtn.classList.add('opacity-60');
+                }
+              });
+
+              if (triviaVerdictBox) {
+                triviaVerdictBox.classList.remove('hidden');
+                triviaVerdictBox.className = isCorrect
+                  ? 'mt-3 p-3 rounded-xl bg-emerald-100 border-2 border-emerald-900 space-y-1'
+                  : 'mt-3 p-3 rounded-xl bg-red-100 border-2 border-red-900 space-y-1';
+              }
+              if (triviaVerdictHeading) {
+                triviaVerdictHeading.textContent = isCorrect ? 'STAMP: RIGHT' : 'STAMP: WRONG';
+                triviaVerdictHeading.className = isCorrect
+                  ? 'font-mono-tech text-xs font-extrabold tracking-wider text-emerald-900'
+                  : 'font-mono-tech text-xs font-extrabold tracking-wider text-red-900';
+              }
+              if (triviaVerdictNote) {
+                triviaVerdictNote.textContent = isCorrect ? q.rightNote : q.wrongNote;
+              }
+
+              revealBackpainCheckupIfComplete();
+            });
+
+            triviaOptionsList.appendChild(btn);
+          });
+        }
+      }
+
+      if (triviaNextBtn) {
+        triviaNextBtn.addEventListener('click', () => {
+          if (currentTriviaIndex + 1 >= emoTriviaQuestions.length) {
+            currentTriviaIndex = 0;
+          } else {
+            currentTriviaIndex += 1;
+          }
+          renderEmoTriviaQuestion();
+        });
+      }
+
+      if (curtainReplayBtn) {
+        curtainReplayBtn.addEventListener('click', () => {
+          hideClosingCurtainOverlay(false);
+          if (replayBtn) replayBtn.click();
+        });
+      }
+
+      renderEmoTriviaQuestion();
+
+      if (replayBtn) {
+        replayBtn.addEventListener('click', () => {
+          hideClosingCurtainOverlay(false);
+          stopRunnerGame();
+
+          currentTriviaIndex = 0;
+          triviaCorrectCount = 0;
+          answeredQuestionSet = new Set();
+          resetBackpainCheckupBridge();
+          resetCakeStageState();
+          renderEmoTriviaQuestion();
+
+          if (stageCakeEl) {
+            stageCakeEl.classList.add('hidden');
+            stageCakeEl.classList.remove('flex');
+          }
+          if (stageGamesEl) stageGamesEl.classList.add('hidden');
+          showLayer0CurtainStart();
+
+          if (statusLed) {
+            statusLed.classList.remove('bg-amber-500');
+            statusLed.classList.add('bg-red-600');
+          }
+        });
+      }
+
+      // ============================================================
+      // 7. CORNER EASTER EGG ("😗" TO "🗞️" + PIPIBOMB)
+      // ============================================================
+      const pageBody = document.getElementById('page-body');
+      const puppyPillBtn = document.getElementById('puppy-pill-btn');
+      const puppyPillEmoji = document.getElementById('puppy-pill-emoji');
+      const puppyPillText = document.getElementById('puppy-pill-text');
+      const pipibombFxLayer = document.getElementById('pipibomb-fx-layer');
+
+      let puppyClickCount = 0;
+      let puppyResetTimeout = null;
+
+      function launchPipibombExplosion(originBtn) {
+        if (!pipibombFxLayer || !originBtn) return;
+        playSfx('pipebomb');
+        const rect = originBtn.getBoundingClientRect();
+        const originX = rect.left + rect.width / 2;
+        const originY = rect.top + rect.height / 2;
+
+        const ring = document.createElement('div');
+        ring.className = 'pipi-shockwave-ring';
+        ring.style.left = `${originX}px`;
+        ring.style.top = `${originY}px`;
+        pipibombFxLayer.appendChild(ring);
+        setTimeout(() => ring.remove(), 950);
+
+        const badge = document.createElement('div');
+        badge.className = 'pipi-badge-anim fixed z-50 px-4 py-2 rounded-2xl bg-amber-300 border-2 border-stone-950 text-stone-950 font-mono-tech font-extrabold text-sm sm:text-base tracking-wider shadow-[4px_4px_0px_#1b1815] whitespace-nowrap';
+        badge.style.left = `${Math.max(120, Math.min(window.innerWidth - 120, originX - 30))}px`;
+        badge.style.top = `${Math.max(90, originY - 24)}px`;
+        badge.textContent = 'PIPIBOMB DETONATED';
+        pipibombFxLayer.appendChild(badge);
+        setTimeout(() => badge.remove(), 2450);
+
+        const blastIcons = ['💣', '🗞️', '💥', '💨', '😗', '✨'];
+        for (let i = 0; i < 16; i++) {
+          const proj = document.createElement('div');
+          proj.textContent = blastIcons[i % blastIcons.length];
+          proj.style.position = 'fixed';
+          proj.style.left = `${originX}px`;
+          proj.style.top = `${originY}px`;
+          proj.style.fontSize = `${18 + (i % 3) * 6}px`;
+          proj.style.pointerEvents = 'none';
+          proj.style.zIndex = '50';
+          proj.style.transition = 'transform 0.95s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.95s ease-out';
+          pipibombFxLayer.appendChild(proj);
+
+          const angle = Math.PI + (Math.random() * Math.PI * 0.65);
+          const dist = 110 + Math.random() * 190;
+          const dx = Math.cos(angle) * dist;
+          const dy = Math.sin(angle) * dist - 40;
+          const rot = (Math.random() - 0.5) * 540;
+
+          requestAnimationFrame(() => {
+            proj.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(1.25)`;
+            proj.style.opacity = '0';
+          });
+
+          setTimeout(() => proj.remove(), 1000);
+        }
+
+        if (pageBody) {
+          pageBody.classList.remove('anim-shake-hard');
+          void pageBody.offsetWidth;
+          pageBody.classList.add('anim-shake-hard');
+        }
+        fireConfetti(140);
+      }
+
+      if (puppyPillBtn) {
+        puppyPillBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (puppyResetTimeout) {
+            clearTimeout(puppyResetTimeout);
+            puppyResetTimeout = null;
+          }
+
+          puppyClickCount += 1;
+          puppyPillBtn.classList.remove('anim-shake-soft', 'anim-shake-hard');
+          void puppyPillBtn.offsetWidth;
+
+          if (puppyClickCount === 1) {
+            if (puppyPillEmoji) puppyPillEmoji.textContent = '😗';
+            if (puppyPillText) puppyPillText.textContent = 'bold move.';
+            puppyPillBtn.classList.add('anim-shake-soft');
+          } else if (puppyClickCount === 2) {
+            if (puppyPillEmoji) puppyPillEmoji.textContent = '🗞️';
+            if (puppyPillText) puppyPillText.textContent = 'careful now.';
+            puppyPillBtn.classList.add('anim-shake-hard');
+          } else {
+            puppyClickCount = 0;
+            if (puppyPillEmoji) puppyPillEmoji.textContent = '💣';
+            if (puppyPillText) puppyPillText.textContent = 'ah, fine, try again';
+            puppyPillBtn.classList.add('anim-shake-hard');
+            launchPipibombExplosion(puppyPillBtn);
+
+            puppyResetTimeout = setTimeout(() => {
+              if (puppyPillEmoji) puppyPillEmoji.textContent = '😗';
+              if (puppyPillText) puppyPillText.textContent = 'Do not click here';
+            }, 3000);
+          }
+        });
+      }
+
+      // ============================================================
+      // 8. FULL SCREEN CONFETTI ENGINE & WINDOW RESIZE HANDLER
+      // ============================================================
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      let confettiParticles = [];
+      let isConfettiAnimating = false;
+
+      function resizeCanvases() {
+        if (canvas) {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        if (runnerActive) {
+          resizeRunnerCanvas();
+        }
+      }
+      window.addEventListener('resize', resizeCanvases);
+      resizeCanvases();
+
+      function fireConfetti(count = 120) {
+        if (!canvas) return;
+        const colors = ['#dc2626', '#f59e0b', '#1b1815', '#0284c7', '#16a34a', '#ea580c'];
+        for (let i = 0; i < count; i++) {
+          confettiParticles.push({
+            x: canvas.width * (0.2 + Math.random() * 0.6),
+            y: canvas.height * 0.45,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.85) * 15,
+            size: 5 + Math.random() * 6,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            angle: Math.random() * 360,
+            spin: (Math.random() - 0.5) * 12,
+            life: 1
+          });
+        }
+        if (!isConfettiAnimating) {
+          isConfettiAnimating = true;
+          renderConfettiFrame();
+        }
+      }
+
+      function renderConfettiFrame() {
+        if (!ctx || !canvas) {
+          isConfettiAnimating = false;
+          return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiParticles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.35;
+          p.vx *= 0.98;
+          p.angle += p.spin;
+          p.life -= 0.008;
+
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.angle * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        });
+
+        confettiParticles = confettiParticles.filter((p) => p.life > 0 && p.y < canvas.height + 24);
+        if (confettiParticles.length > 0) {
+          requestAnimationFrame(renderConfettiFrame);
+        } else {
+          isConfettiAnimating = false;
+        }
+      }
+
+      showLayer0CurtainStart();
+    });
+  </script>
+</body>
+</html>
